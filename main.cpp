@@ -114,6 +114,7 @@ void writestudentintofile(Student student)
 }
 
 void insertStudent(vector<string> v)
+
 {
     //now to insert records i am getting them from the input and then storing them in csv files
 
@@ -153,10 +154,35 @@ writestudentintofile(student);
 
 }
 
+void selectStudents(){
+ifstream file("students.csv");
+
+if(!file){
+    cout<<"Couldnt open file";
+    return;
+}
+string row;
+
+    while(getline(file,row)){
+        for(char& c : row){
+            if(c==','){
+                c=' ';
+            }
+
+        }
+        cout<< row << "\n";
+    }
+
+
+
+
+}
+
+//this function will have to do te WHERE clause filtering in the sql statement for example select students where id=1 /not adding aggregations anytime soon tbh just filtering and every
+//statement will be select * not a single column im going to be reading file rows
 
 int main()
 {
-    
     
 
     while(true){
@@ -176,9 +202,10 @@ int main()
         if(arguments[0]=="INSERT"){
             insertStudent(arguments);
         }
-        
-        
-        
+        else if(arguments[0] == "SELECT" && arguments[1]=="Students"){
+            selectStudents();
+        }
+         
 
     }
 
