@@ -1,8 +1,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 
 using namespace std;
+vector<string> parseRow(string row);
+void writeRowsIntoFile(vector<string> rows);
 
 struct Student
 {
@@ -83,7 +86,205 @@ vector<string> parseValues(string input)
 //just to have a functon dont want to make it very crowded into the insert so i just get a student and pass it here as an argment
 //might say that  i am doing too many functions but well i think this is better than having super long funcions i think
 
-#include <fstream>
+void deleteStudent(vector<string> v)
+{
+    if (v.size() != 6 ||
+        v[1] != "Students" ||
+        v[2] != "WHERE" ||
+        v[3] != "id" ||
+        v[4] != "=")
+    {
+        cout << "Expected: DELETE Students WHERE id = 1\n";
+        return;
+    }
+
+    ifstream file("students.csv");
+
+    if (!file)
+    {
+        cout << "Could not open students.csv\n";
+        return;
+    }
+
+    vector<string> rows;
+    string row;
+    bool found = false;
+
+    while (getline(file, row))
+    {
+        vector<string> values = parseRow(row);
+
+        if (values[0] == v[5])
+        {
+            found = true;
+        }
+        else
+        {
+            rows.push_back(row);
+        }
+    }
+
+    bool readFailed = file.bad();
+    file.close();
+
+    if (readFailed)
+    {
+        cout << "Failed to read students.csv\n";
+        return;
+    }
+
+    if (!found)
+    {
+        cout << "Student not found\n";
+        return;
+    }
+
+    writeRowsIntoFile(rows);
+}
+
+void updateStudent(vector<string> v)
+{
+    if (v.size() != 10 ||
+        v[1] != "Students" ||
+        v[2] != "SET" ||
+        v[4] != "=" ||
+        v[6] != "WHERE" ||
+        v[7] != "id" ||
+        v[8] != "=")
+    {
+        cout << "Expected: UPDATE Students SET age = 23 WHERE id = 1\n";
+        return;
+    }
+
+    int column = -1;
+
+    if (v[3] == "id")
+        column = 0;
+    else if (v[3] == "age")
+        column = 1;
+    else if (v[3] == "name")
+        column = 2;
+    else if (v[3] == "degree")
+        column = 3;
+    else if (v[3] == "group")
+        column = 4;
+    else if (v[3] == "year")
+        column = 5;
+
+    if (column == -1)
+    {
+        cout << "Unknown column\n";
+        return;
+    }
+
+    // A comma would create an extra CSV field.
+    if (v[5].find(',') != string::npos)
+    {
+        cout << "Value cannot contain commas\n";
+        return;
+    }
+
+    ifstream file("students.csv");
+
+    if (!file)
+    {
+        cout << "Could not open students.csv\n";
+        return;
+    }
+
+    vector<string> rows;
+    string row;
+    bool found = false;
+
+    while (getline(file, row))
+    {
+        vector<string> values = parseRow(row);
+
+        if (values.size() == 6 && values[0] == v[9])
+        {
+            values[column] = v[5];
+            found = true;
+            row.clear();
+
+            for (size_t i = 0; i < values.size(); i++)
+            {
+                if (i > 0)
+                {
+                    row += ',';
+                }
+
+                row += values[i];
+            }
+        }
+
+        rows.push_back(row);
+    }
+
+    bool readFailed = file.bad();
+    file.close();
+
+    if (readFailed)
+    {
+        cout << "Failed to read students.csv\n";
+        return;
+    }
+
+    if (!found)
+    {
+        cout << "Student not found\n";
+        return;
+    }
+
+    writeRowsIntoFile(rows);
+}
+
+vector<string> parseRow(string row)
+{
+    vector<string> values;
+    string value;
+
+    for (char c : row)
+    {
+        if (c == ',')
+        {
+            values.push_back(value);
+            value.clear();
+        }
+        else
+        {
+            value += c;
+        }
+    }
+
+    values.push_back(value);
+    return values;
+}
+
+void writeRowsIntoFile(vector<string> rows)
+{
+    ofstream file("students.csv");
+
+    if (!file)
+    {
+        cout << "Could not open students.csv for writing\n";
+        return;
+    }
+
+    for (const string& row : rows)
+    {
+        file << row << "\n";
+    }
+
+    file.close();
+
+    if (!file)
+    {
+        cout << "Failed to save changes\n";
+        return;
+    }
+
+    cout << "Changes saved\n";
+}
 
 void writestudentintofile(Student student)
 {
@@ -204,6 +405,14 @@ int main()
         }
         else if(arguments[0] == "SELECT" && arguments[1]=="Students"){
             selectStudents();
+        }
+        else if (arguments[0] == "DELETE")
+        {
+            deleteStudent(arguments);
+        }
+        else if (arguments[0] == "UPDATE")
+        {
+            updateStudent(arguments);
         }
          
 
